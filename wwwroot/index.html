@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DroneFarm</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='4' y='4' width='8' height='8' transform='rotate(45 8 8)' fill='%23b8f33b'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <canvas id="gl"></canvas>
+  <div class="titlebar">DRONEFARM<button id="menuBtn" class="menubtn" type="button" data-tip="Pause menu">☰</button></div>
+
+  <div id="pauseMenu" class="pausemenu" hidden>
+    <div class="pausemenu__box" id="pauseMain">
+      <div class="pausemenu__title">PAUSED</div>
+      <button id="resumeBtn" type="button">RESUME</button>
+      <button id="optionsBtn" type="button">OPTIONS</button>
+      <button id="savesBtn" type="button">SAVES</button>
+      <button id="newGameBtn" type="button">NEW GAME</button>
+      <div id="optionsView" class="pausemenu__options" hidden>
+        <div class="opts__tabs">
+          <button id="tabGraphics" type="button">GRAPHICS</button>
+          <button id="tabAudio" type="button" class="is-active">AUDIO</button>
+        </div>
+        <div id="optsGraphics" class="opts__page" hidden>No graphics options yet.</div>
+        <div id="optsAudio" class="opts__page">
+          <div class="opts__row"><span>MASTER</span><input type="range" min="0" max="100" data-channel="master" /><b>100</b></div>
+          <div class="opts__row"><span>DRONE</span><input type="range" min="0" max="100" data-channel="drone" /><b>100</b></div>
+          <div class="opts__row"><span>SFX</span><input type="range" min="0" max="100" data-channel="sfx" /><b>100</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pausemenu__box" id="newGameBox" hidden>
+      <div class="pausemenu__title">NEW WORLD</div>
+      <div class="pausemenu__confirmtext">
+        Are you sure you want to create a new world?
+        Your current world will be saved automatically.
+      </div>
+      <button id="confirmNewGameBtn" type="button">CREATE NEW WORLD</button>
+      <button id="cancelNewGameBtn" type="button">CANCEL</button>
+    </div>
+
+    <div class="pausemenu__box" id="saveManager" hidden>
+      <div class="pausemenu__title">SAVES</div>
+      <div id="saveList"></div>
+      <button id="newSaveBtn" type="button">NEW SAVE</button>
+      <button id="closeSavesBtn" type="button">BACK</button>
+      <div id="saveConfirm" class="save__confirm" hidden>
+        <div id="saveConfirmText"></div>
+        <button id="confirmDeleteBtn" type="button">DELETE</button>
+        <button id="cancelDeleteBtn" type="button">CANCEL</button>
+      </div>
+    </div>
+  </div>
+  <button id="unlocksBtn" class="addpanel unlocksbtn" type="button" data-tip="Unlockables — spend resources to unlock abilities">
+    <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><rect x="4" y="4" width="8" height="8" transform="rotate(45 8 8)" fill="#b8f33b" /></svg>
+  </button>
+  <button id="addPanel" class="addpanel" type="button" data-tip="Open a new script panel">+</button>
+  <button id="helpBtn" class="addpanel helpbtn" type="button" data-tip="Help — controls, scripting language, builtins">?</button>
+
+  <div id="unlockOverlay" class="unlockmenu" hidden>
+    <div class="unlockmenu__bar">
+      <span>UNLOCKABLES</span>
+      <button id="unlockCloseBtn" type="button" data-tip="Close (Esc)">×</button>
+    </div>
+    <div id="unlockViewport" class="unlockmenu__viewport">
+      <div id="unlockCanvas" class="unlockmenu__canvas"></div>
+    </div>
+  </div>
+  <!-- resource chips get appended here, e.g.
+       <div class="resource"><span class="resource__icon"></span>SEEDS <b>12</b></div> -->
+  <div id="resources" class="resources"></div>
+  <button id="halfSpeedBtn" class="speedtoggle" type="button" data-tip="Testing: force drone actions to exactly 0.5x speed">0.5x</button>
+  <div id="speedBadge" class="speedbadge" data-tip="Drone action speed">SPEED 1.0x</div>
+  <script defer src="src/atlas.js"></script>
+  <script defer src="src/tiles.js"></script>
+  <script defer src="src/objects.js"></script>
+  <script defer src="src/csharp.js"></script>
+  <script defer src="src/ui.js"></script>
+  <script defer src="src/helpcontent.js"></script>
+  <script defer src="src/main.js"></script>
+</body>
+</html>

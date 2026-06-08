@@ -1,0 +1,10 @@
+{
+  "name": "dronefarm",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Isometric WebGL farming game — static site, no build step.",
+  "scripts": {
+    "dev": "python serve.py"
+  }
+}

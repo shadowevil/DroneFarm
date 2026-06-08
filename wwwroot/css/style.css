@@ -1,0 +1,895 @@
+﻿html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #11150e;
+}
+
+/* themed scrollbars, everywhere */
+* {
+  scrollbar-width: thin;                                   /* firefox */
+  scrollbar-color: rgba(184, 243, 59, 0.3) rgba(10, 13, 8, 0.6);
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: rgba(184, 243, 59, 0.05);
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(184, 243, 59, 0.25);
+  border: 2px solid rgba(10, 13, 8, 0.9);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(184, 243, 59, 0.45);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+#gl {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+#gl:active { cursor: grabbing; }
+
+/* title bar - full-width strip, 90% opaque */
+.titlebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  font: 600 14px/1 ui-monospace, monospace;
+  letter-spacing: 0.25em;
+  color: #b8f33b;
+  background: rgba(10, 13, 8, 0.9);
+  border-bottom: 1px solid rgba(184, 243, 59, 0.14);
+  pointer-events: none;
+}
+
+/* resource bar - slim strip under the title; empty until resources exist */
+.resources {
+  position: fixed;
+  top: 48px;
+  left: 0;
+  right: 0;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 24px;
+  background: rgba(10, 13, 8, 0.9);
+  border-bottom: 1px solid rgba(184, 243, 59, 0.14);
+  pointer-events: none; /* don't block camera dragging */
+}
+
+.resource {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font: 500 11px/1 ui-monospace, monospace;
+  letter-spacing: 0.12em;
+  color: #6b7a5a;
+}
+
+.resource b {
+  font-weight: 600;
+  color: #b8f33b;
+  font-variant-numeric: tabular-nums;
+}
+
+.resource__icon {
+  height: 18px;
+  width: auto;
+  image-rendering: pixelated;
+}
+
+/* hamburger pause-menu button, far right of the title bar */
+.menubtn {
+  margin-left: auto;
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(184, 243, 59, 0.35);
+  background: transparent;
+  color: #b8f33b;
+  font: 700 14px/1 ui-monospace, monospace;
+  cursor: pointer;
+  pointer-events: auto; /* the title bar itself ignores pointer events */
+}
+.menubtn:hover { background: rgba(184, 243, 59, 0.15); }
+
+/* pause menu overlay — freezes and covers the whole game */
+.pausemenu {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 8, 4, 0.75);
+}
+.pausemenu[hidden] { display: none; }
+
+.pausemenu__box {
+  min-width: 280px;
+  padding: 22px 24px;
+  background: rgba(10, 13, 8, 0.97);
+  border: 1px solid rgba(184, 243, 59, 0.35);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+.pausemenu__title {
+  margin-bottom: 16px;
+  font: 700 16px/1 ui-monospace, monospace;
+  letter-spacing: 0.3em;
+  color: #b8f33b;
+  text-align: center;
+}
+
+.pausemenu__box button {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 0;
+  border: 1px solid rgba(184, 243, 59, 0.3);
+  background: transparent;
+  color: #d6e3c3;
+  font: 600 12px/1 ui-monospace, monospace;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+}
+.pausemenu__box button:hover {
+  background: rgba(184, 243, 59, 0.12);
+  color: #b8f33b;
+}
+
+.pausemenu__options {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid rgba(184, 243, 59, 0.14);
+  font: 400 11px/1.6 ui-monospace, monospace;
+  color: #6b7a5a;
+}
+
+/* save manager rows */
+.save__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+}
+.save__row .save__name {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 8px;
+  background: rgba(184, 243, 59, 0.06);
+  border: 1px solid rgba(184, 243, 59, 0.18);
+  color: #d6e3c3;
+  font: 600 10px/1 ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  outline: none;
+}
+.save__row.is-active .save__name {
+  border-color: rgba(184, 243, 59, 0.55);
+  color: #b8f33b;
+}
+.save__row button {
+  width: auto;
+  margin: 0;
+  padding: 7px 10px;
+  font-size: 9px;
+}
+.save__row .save__delete {
+  padding: 7px 9px;
+  font-size: 11px;
+  line-height: 1;
+}
+.save__row .save__delete:hover {
+  background: rgba(255, 87, 70, 0.18);
+  border-color: rgba(255, 87, 70, 0.45);
+  color: #ff5746;
+}
+
+.pausemenu__confirmtext {
+  margin-bottom: 8px;
+  font: 400 11px/1.6 ui-monospace, monospace;
+  color: #d6e3c3;
+  text-align: center;
+}
+
+/* delete confirmation prompt */
+.save__confirm {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid rgba(255, 87, 70, 0.35);
+  font: 400 11px/1.6 ui-monospace, monospace;
+  color: #d6e3c3;
+  text-align: center;
+}
+.save__confirm #confirmDeleteBtn:hover {
+  background: rgba(255, 87, 70, 0.18);
+  border-color: rgba(255, 87, 70, 0.5);
+  color: #ff5746;
+}
+
+.opts__tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.opts__tabs button {
+  flex: 1;
+  margin: 0;
+  padding: 6px 0;
+  font-size: 10px;
+}
+.opts__tabs button.is-active {
+  background: rgba(184, 243, 59, 0.12);
+  color: #b8f33b;
+}
+
+.opts__page { text-align: center; }
+
+/* audio channel mixer rows */
+.opts__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  font: 600 10px/1 ui-monospace, monospace;
+  letter-spacing: 0.12em;
+  color: #6b7a5a;
+}
+.opts__row span { width: 52px; text-align: left; }
+.opts__row input[type="range"] {
+  flex: 1;
+  accent-color: #b8f33b;
+}
+.opts__row b {
+  width: 28px;
+  text-align: right;
+  color: #b8f33b;
+  font-variant-numeric: tabular-nums;
+}
+
+/* new-panel button, floating under the title + resource bars */
+.addpanel {
+  position: fixed;
+  top: 92px;
+  right: 59px;
+  z-index: 40;
+  width: 35px;
+  height: 35px;
+  border: 1px solid rgba(184, 243, 59, 0.35);
+  background: rgba(10, 13, 8, 0.9);
+  color: #b8f33b;
+  font: 700 20px/1 ui-monospace, monospace;
+  cursor: pointer;
+}
+.addpanel:hover { background: rgba(184, 243, 59, 0.15); }
+
+/* help button sits to the right of the + button */
+.helpbtn { right: 16px; }
+
+/* testing: half-speed toggle, left of the speed badge */
+.speedtoggle {
+  position: fixed;
+  right: 110px;
+  bottom: 8px;
+  z-index: 30;
+  padding: 4px 8px;
+  border: 1px solid rgba(184, 243, 59, 0.35);
+  background: transparent;
+  color: #8fa07c;
+  font: 600 10px/1 ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+.speedtoggle:hover { background: rgba(184, 243, 59, 0.1); }
+.speedtoggle.is-active {
+  background: rgba(184, 243, 59, 0.18);
+  border-color: rgba(184, 243, 59, 0.7);
+  color: #b8f33b;
+}
+
+/* game speed, bottom-right of the viewport */
+.speedbadge {
+  position: fixed;
+  right: 16px;
+  bottom: 12px;
+  z-index: 30;
+  font: 600 11px/1 ui-monospace, monospace;
+  letter-spacing: 0.12em;
+  color: #8fa07c;
+  user-select: none;
+}
+.speedbadge.is-boosted { color: #b8f33b; }
+
+/* unlockables button sits to the left of the + button (game-logo diamond) */
+.unlocksbtn {
+  right: 102px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.unlocksbtn svg { display: block; }
+
+/* unlockables: full-viewport overlay with a pannable tree canvas */
+.unlockmenu {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  display: flex;
+  flex-direction: column;
+  background: rgba(4, 6, 3, 0.97);
+}
+.unlockmenu[hidden] { display: none; }
+
+.unlockmenu__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 16px 0 24px;
+  background: rgba(10, 13, 8, 1);
+  border-bottom: 1px solid rgba(184, 243, 59, 0.3);
+  font: 600 14px/1 ui-monospace, monospace;
+  letter-spacing: 0.25em;
+  color: #b8f33b;
+}
+.unlockmenu__bar button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(184, 243, 59, 0.35);
+  background: transparent;
+  color: #b8f33b;
+  font: 700 13px/1 ui-monospace, monospace;
+  cursor: pointer;
+}
+.unlockmenu__bar button:hover {
+  background: rgba(255, 87, 70, 0.18);
+  border-color: rgba(255, 87, 70, 0.45);
+  color: #ff5746;
+}
+
+.unlockmenu__viewport {
+  position: relative;
+  flex: 1 1 auto;
+  overflow: hidden;
+  cursor: grab;
+}
+.unlockmenu__viewport:active { cursor: grabbing; }
+
+.unlockmenu__canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* a node on the tree */
+.unlocknode {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 150px;
+  padding: 12px 16px;
+  border: 1px solid rgba(184, 243, 59, 0.55);
+  background: #11150e;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.7), 0 0 18px rgba(184, 243, 59, 0.08);
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+.unlocknode__icon {
+  display: block;
+  margin: 0 auto 8px;
+}
+.unlocknode.is-poor .unlocknode__icon { filter: grayscale(0.6); }
+
+.unlocknode__name {
+  font: 600 12px/1 ui-monospace, monospace;
+  letter-spacing: 0.12em;
+  color: #d6e3c3;
+}
+.unlocknode__cost {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 7px;
+  font: 500 11px/1 ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  color: #6b7a5a;
+}
+
+/* resource cost chips: icon + amount, red when short */
+.tipcost {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(184, 243, 59, 0.18);
+}
+.tipcost__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 600 11px/1 ui-monospace, monospace;
+  color: #d6e3c3;
+}
+.tipcost__item img {
+  height: 15px;
+  width: auto;
+  image-rendering: pixelated;
+}
+/* only the amount turns red when short — the icon just identifies the resource */
+.tipcost__item.is-short { color: #ff5746; }
+.unlocknode:hover { background: rgba(184, 243, 59, 0.1); }
+.unlocknode.is-owned {
+  border-color: rgba(184, 243, 59, 0.6);
+  cursor: default;
+}
+.unlocknode.is-owned .unlocknode__name { color: #b8f33b; }
+.unlocknode.is-owned .unlocknode__cost { color: #6b7a5a; }
+.unlocknode.is-poor {
+  opacity: 0.55;
+  cursor: default;
+}
+.unlocknode.is-poor .unlocknode__cost { color: #ff5746; }
+
+/* prerequisite not yet owned */
+.unlocknode.is-locked {
+  opacity: 0.38;
+  cursor: default;
+}
+.unlocknode.is-locked:hover { background: #11150e; }
+
+/* prerequisite connector lines */
+.unlocklinks {
+  position: absolute;
+  left: -5000px;
+  top: -5000px;
+  width: 10000px;
+  height: 10000px;
+  pointer-events: none;
+  z-index: 0; /* always beneath the node cards */
+}
+.unlocknode { z-index: 1; }
+.unlocklinks line {
+  stroke: rgba(184, 243, 59, 0.22); /* locked path: dim */
+  stroke-width: 2;
+}
+.unlocklinks line.is-next {
+  stroke: rgba(184, 243, 59, 0.6); /* matches the owned node's border */
+  stroke-width: 3;
+}
+.unlocklinks line.is-done {
+  stroke: rgba(184, 243, 59, 0.45); /* completed path: settled */
+  stroke-width: 2;
+}
+
+/* unmet requirement, in the tooltip */
+.tip__req {
+  margin-top: 5px;
+  font: 600 10px/1.4 ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  color: #ff5746;
+}
+
+/* in-game tooltips (elements with data-tip) */
+.tooltip {
+  position: fixed;
+  z-index: 999;
+  display: none;
+  max-width: 260px;
+  padding: 6px 9px;
+  background: rgba(10, 13, 8, 0.96);
+  border: 1px solid rgba(184, 243, 59, 0.4);
+  color: #d6e3c3;
+  font: 400 11px/1.5 ui-monospace, monospace;
+  pointer-events: none;
+  white-space: pre-line;
+}
+
+/* unlock-node tooltip: UNLOCKS header + a help-style highlighted code box */
+.tip__head {
+  font: 600 9px/1 ui-monospace, monospace;
+  letter-spacing: 0.16em;
+  color: #b8f33b;
+}
+.tip__desc {
+  margin-top: 5px;
+  color: #aebd9c;
+}
+.tipterm { font-weight: 700; }
+
+.tip__codebox {
+  margin-top: 5px;
+  padding: 6px 9px;
+  background: rgba(184, 243, 59, 0.05);
+  border: 1px solid rgba(184, 243, 59, 0.16);
+  border-left: 2px solid rgba(184, 243, 59, 0.5);
+  font: 400 11px/1.6 ui-monospace, monospace;
+  white-space: pre;
+  color: #d6e3c3;
+}
+
+/* floating UI panels — resizable from the bottom-right corner */
+.panel {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  min-height: 140px;
+  resize: both;
+  overflow: hidden;
+  background: rgba(10, 13, 8, 0.9);
+  border: 1px solid rgba(184, 243, 59, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.panel::-webkit-resizer {
+  background: linear-gradient(135deg, transparent 55%, rgba(184, 243, 59, 0.45) 55%);
+}
+
+/* minimized panels collapse to the bar regardless of resized height */
+.panel--min {
+  height: auto !important;
+  min-height: 0;
+  resize: none;
+}
+
+.panel__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 4px 0 10px;
+  background: rgba(184, 243, 59, 0.08);
+  border-bottom: 1px solid rgba(184, 243, 59, 0.18);
+  cursor: move;
+  user-select: none;
+}
+
+.panel__title {
+  flex: 1;
+  font: 600 11px/1.6 ui-monospace, monospace;
+  letter-spacing: 0.14em;
+  color: #b8f33b;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  outline: none;
+}
+.panel__title[contenteditable="true"] {
+  cursor: text;
+  user-select: text;
+  background: rgba(184, 243, 59, 0.12);
+}
+
+.panel__min,
+.panel__close {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid rgba(184, 243, 59, 0.3);
+  background: transparent;
+  color: #b8f33b;
+  font: 700 12px/1 ui-monospace, monospace;
+  cursor: pointer;
+}
+.panel__min:hover { background: rgba(184, 243, 59, 0.15); }
+.panel__close:hover {
+  background: rgba(255, 87, 70, 0.18);
+  border-color: rgba(255, 87, 70, 0.45);
+  color: #ff5746;
+}
+
+/* play / pause / stop toolbar under the title bar */
+.panel__tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(184, 243, 59, 0.12);
+}
+.panel__tools button {
+  width: 26px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid rgba(184, 243, 59, 0.3);
+  background: transparent;
+  color: #b8f33b;
+  font: 700 10px/1 ui-monospace, monospace;
+  cursor: pointer;
+}
+.panel__tools button:hover { background: rgba(184, 243, 59, 0.15); }
+
+/* code editor: highlighted <pre> behind a transparent-text textarea */
+.panel__editor {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0; /* let flex shrink it when the panel is resized smaller */
+}
+
+.panel__hl,
+.panel__body {
+  margin: 0;
+  border: 0;
+  padding: 8px 10px;
+  font: 400 12px/1.5 ui-monospace, monospace;
+  white-space: pre;
+  box-sizing: border-box;
+  tab-size: 4;
+}
+
+.panel__hl {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: #d6e3c3;
+  pointer-events: none;
+}
+
+/* editor + overlay must agree on tab rendering */
+.panel__body,
+.panel__hl {
+  tab-size: 4;
+  -moz-tab-size: 4;
+}
+
+/* line-number gutter (code panels) */
+.panel__editor--code .panel__hl,
+.panel__editor--code .panel__body { padding-left: 48px; }
+
+.panel__gutter {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 38px;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  background: rgba(184, 243, 59, 0.04);
+  border-right: 1px solid rgba(184, 243, 59, 0.12);
+}
+.panel__gutter > div {
+  padding: 8px 6px 8px 0;
+  font: 400 12px/1.5 ui-monospace, monospace;
+  color: #55624a;
+  text-align: right;
+  white-space: pre;
+}
+
+/* in-game context menu (Copy / Cut / Paste) */
+.ctxmenu {
+  position: fixed;
+  z-index: 2000;
+  display: none;
+  min-width: 110px;
+  background: rgba(10, 13, 8, 0.97);
+  border: 1px solid rgba(184, 243, 59, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+.ctxmenu__item {
+  padding: 6px 12px;
+  font: 400 11px/1.4 ui-monospace, monospace;
+  color: #d6e3c3;
+  cursor: pointer;
+}
+.ctxmenu__item:hover { background: rgba(184, 243, 59, 0.12); color: #b8f33b; }
+.ctxmenu__item.is-disabled {
+  color: #4a543e;
+  cursor: default;
+}
+.ctxmenu__item.is-disabled:hover { background: transparent; color: #4a543e; }
+
+/* autocomplete dropdown, anchored at the caret */
+.panel__suggest {
+  position: absolute;
+  z-index: 5;
+  display: none;
+  min-width: 150px;
+  max-width: 250px;
+  max-height: 150px;
+  overflow-y: auto;
+  background: rgba(10, 13, 8, 0.97);
+  border: 1px solid rgba(184, 243, 59, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+
+.panel__suggest-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  padding: 4px 9px;
+  font: 400 11px/1.4 ui-monospace, monospace;
+  color: #d6e3c3;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.panel__suggest-item i {
+  font-style: normal;
+  font-size: 9px;
+  color: #6b7a5a;
+}
+.panel__suggest-item:hover { background: rgba(184, 243, 59, 0.08); }
+.panel__suggest-item.is-active {
+  background: rgba(184, 243, 59, 0.15);
+  color: #b8f33b;
+}
+
+/* the instruction currently executing */
+.panel__activeline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 18px;
+  display: none;
+  background: rgba(184, 243, 59, 0.13);
+  border-left: 2px solid rgba(184, 243, 59, 0.65);
+  pointer-events: none;
+}
+
+.panel__body {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  color: transparent;
+  caret-color: #d6e3c3;
+  resize: none;
+  outline: none;
+  overflow: auto;
+}
+
+/* token colors */
+.c-type { color: #4ec9b0; }
+.c-kw  { color: #569cd6; }
+.c-str { color: #ce9178; }
+.c-num { color: #b5cea8; }
+.c-com { color: #6a9955; }
+.c-bi  { color: #f0a93c; }
+.c-fn  { color: #dcdcaa; }
+
+/* status strip */
+.panel__statusbar {
+  display: flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 10px;
+  border-top: 1px solid rgba(184, 243, 59, 0.12);
+  font: 500 10px/1 ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  color: #6b7a5a;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.panel__statusbar.is-run  { color: #b8f33b; }
+.panel__statusbar.is-warn { color: #f0a93c; }
+.panel__statusbar.is-err  { color: #ff5746; }
+
+.panel--min .panel__body,
+.panel--min .panel__editor,
+.panel--min .panel__tools,
+.panel--min .panel__statusbar { display: none; }
+
+/* help panel: collapsible category tree left, content right */
+.panel__help {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.panel__helptabs {
+  flex: none;
+  width: 128px;
+  overflow-y: auto;
+  border-right: 1px solid rgba(184, 243, 59, 0.14);
+}
+
+.panel__helptabs button {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-bottom: 1px solid rgba(184, 243, 59, 0.07);
+  background: transparent;
+  text-align: left;
+  font: 600 10px/1 ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  color: #6b7a5a;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.panel__helptabs button:hover { color: #b8f33b; }
+.panel__helptabs button.is-active {
+  color: #b8f33b;
+  background: rgba(184, 243, 59, 0.08);
+  border-left: 2px solid rgba(184, 243, 59, 0.6);
+}
+.panel__helptabs button i {
+  font-style: normal;
+  margin-right: 6px;
+  color: #6b7a5a;
+}
+.panel__helptabs button.is-child {
+  padding-left: 24px;
+  font-weight: 400;
+  text-transform: none;
+}
+
+.panel__helpkids { display: none; }
+.panel__helpgroup.is-open .panel__helpkids { display: block; }
+
+.panel__helpview {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 10px 12px;
+  overflow: auto;
+  font: 400 11px/1.6 ui-monospace, monospace;
+  color: #d6e3c3;
+  white-space: pre-wrap; /* prose flows to the pane width */
+}
+
+/* tables inside help content */
+.helptable {
+  width: 100%;
+  margin: 4px 0;
+  border-collapse: collapse;
+  white-space: normal;
+}
+.helptable th {
+  padding: 5px 10px 5px 0;
+  border-bottom: 1px solid rgba(184, 243, 59, 0.3);
+  text-align: left;
+  font: 600 10px/1.4 ui-monospace, monospace;
+  letter-spacing: 0.12em;
+  color: #b8f33b;
+}
+.helptable td {
+  padding: 4px 10px 4px 0;
+  border-bottom: 1px solid rgba(184, 243, 59, 0.08);
+  vertical-align: top;
+  font: 400 11px/1.5 ui-monospace, monospace;
+  color: #d6e3c3;
+}
+.helptable td:first-child {
+  white-space: nowrap;
+  color: #f0a93c;
+}
+
+/* fenced example code inside help content */
+.panel__codebox {
+  margin: 6px 0;
+  padding: 8px 10px;
+  background: rgba(184, 243, 59, 0.05);
+  border: 1px solid rgba(184, 243, 59, 0.16);
+  border-left: 2px solid rgba(184, 243, 59, 0.5);
+  overflow-x: auto;
+  white-space: pre; /* code keeps its exact layout */
+}
+
+/* harvested resource flying to the bar */
+.flier {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  image-rendering: pixelated;
+  transform-origin: top left;
+  transition: transform 0.6s cubic-bezier(0.5, 0, 0.2, 1);
+  will-change: transform;
+}
