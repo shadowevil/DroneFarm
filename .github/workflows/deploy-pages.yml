@@ -2,7 +2,7 @@ name: Deploy wwwroot to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   workflow_dispatch:
 
 # Allow the deploy job to publish to Pages.
